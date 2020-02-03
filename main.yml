@@ -72,6 +72,11 @@
       path: /usr/share/tomcat/webapps/ROOT
       state: directory
 
+  - name: Create this /usr/share/tomcat/webapps/ansible
+    file:
+      path: /usr/share/tomcat/webapps/ansible
+      state: directory
+
   - name: copy static index.html to tomcat webapps/ansible/index.html
     template:
       src: index.html.j2
@@ -111,13 +116,10 @@
   become: true
   hosts: appdbs
   tasks:
-  - name: install progress
-    command: "yum install -y postgresql-server"
-
-  #- name: install postgres
-  #  yum:
-  #    name: postgresql-server
-  #    state: latest
+  - name: install postgres
+    yum:
+      name: postgresql-server
+      state: latest
   - name: enable apache at boot
     service:
       name: postgresql
@@ -127,10 +129,16 @@
       msg: "Either uncomment the postgres setup or manually login and initialize"
 
  # only run the next 2 tasks once!
-#  - name: initilize postgres
-#    command: postgresql-setup initdb
-#  - name: initilize postgres some more
-#    command: chkconfig postgresql on
+  - name: initilize postgres
+    command: postgresql-setup initdb
+    register: r_postgres_initdb
+    failed_when:
+    - r_postgres_initdb.rc != 0
+    - r_postgres_initdb.stdout != 'Data directory is not empty!'
+    changed_when:
+    - r_postgres_initdb.rc == 0
+ # - name: initilize postgres some more
+ #   command: chkconfig postgresql on
   - name: start postgres
     service:
       name: postgresql.service
@@ -150,7 +158,7 @@
     service:
       name: httpd
       enabled: yes
-#  - name: start apache
-#    service:
-#      name: httpd
-#      state: started
+  - name: start apache
+    service:
+      name: httpd
+      state: started
