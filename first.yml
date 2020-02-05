@@ -1,0 +1,9 @@
+---
+ - name: Display motd
+   hosts: all
+
+   tasks:
+     - name: Display motd 2
+       command: cat /etc/motd
+       register: mymotd
+     
